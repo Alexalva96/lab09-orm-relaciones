@@ -1,5 +1,5 @@
-from sqlalchemy import Float, ForeignKey, Integer, String
 from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+from sqlalchemy import Column, Float, ForeignKey, Integer, String, Table
  
  
 class Base(DeclarativeBase):
@@ -15,7 +15,24 @@ class CategoriaModel(Base):
     productos: Mapped[list["ProductoModel"]] = relationship(
         "ProductoModel", back_populates="categoria"
     )
- 
+    
+    productos: Mapped[list["ProductoModel"]] = relationship(
+        "ProductoModel", back_populates="categoria", cascade="all, delete-orphan"
+    )
+
+
+
+producto_etiqueta = Table(
+    "producto_etiqueta",
+    Base.metadata,
+    Column(
+        "producto_id", ForeignKey("productos.id", ondelete="CASCADE"), primary_key=True
+    ),
+    Column(
+        "etiqueta_id", ForeignKey("etiquetas.id", ondelete="CASCADE"), primary_key=True
+    ),
+)
+
  
 class ProductoModel(Base):
     __tablename__ = "productos"
@@ -30,3 +47,20 @@ class ProductoModel(Base):
     categoria: Mapped["CategoriaModel"] = relationship(
         "CategoriaModel", back_populates="productos"
     )
+
+    etiquetas: Mapped[list["EtiquetaModel"]] = relationship(
+        "EtiquetaModel", secondary=producto_etiqueta, back_populates="productos"
+    )
+
+
+class EtiquetaModel(Base):
+    __tablename__ = "etiquetas"
+ 
+    id: Mapped[int] = mapped_column(Integer, primary_key=True, autoincrement=True)
+    nombre: Mapped[str] = mapped_column(String(30), nullable=False, unique=True)
+ 
+    productos: Mapped[list["ProductoModel"]] = relationship(
+        "ProductoModel", secondary=producto_etiqueta, back_populates="etiquetas"
+    )
+
+
